@@ -1,10 +1,145 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-version: 2
-updates:
-  - package-ecosystem: "pip" # For Python packages
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "weekly"
+# Cylinder - Professional IDOR Vulnerability Testing Configuration
+# --------------------------------------------------------------
+# This configuration file defines the settings for your IDOR security scans
+# Save different configurations for various testing scenarios
+
+# General Configuration
+general:
+  # Profile name will be displayed in reports and logs
+  profile_name: "Default IDOR Scan"
+  # Description of the scan purpose and scope (optional)
+  description: "Full IDOR vulnerability assessment for web application"
+  # License key (required for PRO features)
+  license_key: "YOUR-LICENSE-KEY-HERE"
+  # Output directory for reports and scan results
+  output_directory: "./cylinder-reports"
+  # Report formats: json, html, pdf, xml (multiple can be selected)
+  report_formats:
+    - html
+    - json
+
+# Target Configuration
+target:
+  # Target URL to scan (required)
+  url: "https://example.com"
+  # Proxy settings (optional)
+  proxy:
+    enabled: false
+    http_proxy: "http://127.0.0.1:8080"
+    https_proxy: "http://127.0.0.1:8080"
+  # SSL/TLS verification
+  ssl_verify: true
+  # Connection timeout in seconds
+  timeout: 10
+  # Number of concurrent threads
+  threads: 5
+  # Maximum scan duration in minutes (0 = unlimited)
+  max_scan_duration: 60
+
+# Authentication Configuration
+authentication:
+  # Cookies in format: "name=value; name2=value2"
+  cookies: "session=abcdef12345; auth=98765zyxw"
+  # Headers in format: name: value
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    Content-Type: "application/json"
+  # JWT token for JWT-based testing (optional)
+  jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  # Basic authentication (optional)
+  basic_auth:
+    enabled: false
+    username: "admin"
+    password: "password"
+
+# IDOR Test Configuration
+idor_testing:
+  # Test IDs to use for IDOR testing (comma-separated list)
+  test_ids: "1,2,3,admin,user,1001,1002,1003,user_5,user_10,a1,b2"
+  
+  # Enable/disable specific testing modules
+  modules:
+    standard_idor: true           # Basic ID parameter testing
+    parameter_pollution: true     # Tests for parameter pollution vulnerabilities
+    http_method_switching: true   # Tests different HTTP methods (GET, POST, PUT, etc.)
+    api_versioning: true          # Tests API version manipulation (e.g., v1 to v0)
+    jwt_manipulation: true        # Tests JWT token manipulation
+    race_conditions: true         # Tests for race condition IDOR issues
+    mass_assignment: true         # Tests for mass assignment vulnerabilities
+    graphql: true                 # GraphQL-specific IDOR testing
+  
+  # Advanced options
+  advanced:
+    # Verbose output with detailed logs
+    verbose: true
+    # Custom parameter names to focus on (in addition to automatic detection)
+    custom_parameters:
+      - "user_id"
+      - "account_id"
+      - "document_id"
+      - "customer_number"
+    # URL patterns to ignore (regex format)
+    exclude_patterns:
+      - "/assets/.*"
+      - "/static/.*"
+      - "/images/.*"
+    # URL patterns to focus on (regex format)
+    include_patterns:
+      - "/api/.*"
+      - "/user/.*"
+      - "/account/.*"
+    # Enable content analysis to detect sensitive information in responses
+    content_analysis: true
+    # Delay between requests in milliseconds (to avoid rate limiting)
+    request_delay: 0
+    # Retry failed requests
+    max_retries: 3
+    # Find predictable resource IDs beyond the provided test IDs
+    predictable_id_detection: true
+
+# Scan Scheduling (PRO feature)
+scheduling:
+  # Enable scheduled scanning
+  enabled: false
+  # Frequency: daily, weekly, monthly
+  frequency: "weekly"
+  # Day of week (0-6, 0 is Sunday) - for weekly scans
+  day_of_week: 1
+  # Time to run the scan (24-hour format)
+  time: "03:00"
+  # Email notification settings
+  notifications:
+    email_enabled: true
+    email_recipients:
+      - "security@example.com"
+      - "admin@example.com"
+
+# Integration with other tools (PRO feature)
+integrations:
+  # Integration with issue tracking systems
+  jira:
+    enabled: false
+    url: "https://jira.example.com"
+    api_token: "YOUR-JIRA-API-TOKEN"
+    project_key: "SEC"
+    issue_type: "Bug"
+  # Integration with Slack for notifications
+  slack:
+    enabled: false
+    webhook_url: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+    channel: "#security-alerts"
+  # Integration with CI/CD pipeline
+  ci_cd:
+    enabled: false
+    fail_on_high_severity: true
+    fail_on_medium_severity: false
+
+# Alert thresholds (PRO feature)
+alerts:
+  # Minimum severity level to include in report/alerts
+  # Options: info, low, medium, high, critical
+  minimum_severity: "low"
+  # Number of findings to trigger critical alert
+  high_severity_threshold: 1
+  medium_severity_threshold: 5
