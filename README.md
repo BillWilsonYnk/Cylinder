@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Contributions welcome](https://img.shields.io/badge/Contributions-welcome-orange.svg)](https://github.com/yourusername/idor-scanner/issues)
 
-**A sophisticated cybersecurity tool for identifying IDOR vulnerabilities during bug bounty hunting**
+**Cylinder is a sophisticated cybersecurity tool for identifying IDOR vulnerabilities during bug bounty hunting**
 
 ---
 
