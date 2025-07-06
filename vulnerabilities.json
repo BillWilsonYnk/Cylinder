@@ -1,0 +1,154 @@
+{
+  "target": "https://looksmax.org/whats-new/posts/7770678/",
+  "timestamp": "2025-07-06 12:40:31",
+  "findings": [
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/..//",
+      "description": "Path parameter IDOR test: replaced 'login' with '../' - Response size changed (31871 vs 67107)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"forum_list\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tdata-..."
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/..//register",
+      "description": "Path parameter IDOR test: replaced 'login' with '../' - Response size changed (39388 vs 38511)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda..."
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/%2f",
+      "description": "Path parameter IDOR test: replaced 'register' with '%2f' - Response size changed (38097 vs 31874)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"login\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tdata-csrf=..."
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/../",
+      "description": "Path parameter IDOR test: replaced 'register' with '../' - Response size changed (38974 vs 66874)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"forum_list\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tdata-..."
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\",
+      "description": "Advanced path traversal: appended '..\\' to 'register' - Response size changed (38553 vs 38972)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\..\\..\\",
+      "description": "Advanced path traversal: appended '..\\..\\..\\' to 'register' - Response size changed (38974 vs 38533)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\..\\",
+      "description": "Advanced path traversal: appended '..\\..\\' to 'register' - Response size changed (38097 vs 38942)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\..\\..\\..\\",
+      "description": "Advanced path traversal: appended '..\\..\\..\\..\\' to 'register' - Response size changed (38511 vs 38952)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\..\\..\\..\\..\\",
+      "description": "Advanced path traversal: appended '..\\..\\..\\..\\..\\' to 'register' - Response size changed (38518 vs 38992)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..\\..\\..\\..\\..\\..\\",
+      "description": "Advanced path traversal: appended '..\\..\\..\\..\\..\\..\\' to 'register' - Response size changed (38553 vs 38127)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%2f",
+      "description": "Advanced path traversal: appended '%2e%2e%2f' to 'register' - Response size changed (38518 vs 38102)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%5c",
+      "description": "Advanced path traversal: appended '%2e%2e%5c' to 'register' - Response size changed (38518 vs 38102)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%2f%2e%2e%2f",
+      "description": "Advanced path traversal: appended '%2e%2e%2f%2e%2e%2f' to 'register' - Response size changed (38097 vs 38521)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%5c%2e%2e%5c",
+      "description": "Advanced path traversal: appended '%2e%2e%5c%2e%2e%5c' to 'register' - Response size changed (38097 vs 38521)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%2f%2e%2e%2f%2e%2e%2f",
+      "description": "Advanced path traversal: appended '%2e%2e%2f%2e%2e%2f%2e%2e%2f' to 'register' - Response size changed (38097 vs 38568)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+      "description": "Advanced path traversal: appended '%2e%2e%5c%2e%2e%5c%2e%2e%5c' to 'register' - Response size changed (38097 vs 38568)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register..%2f..%5c..%2f..%5c",
+      "description": "Advanced path traversal: appended '..%2f..%5c..%2f..%5c' to 'register' - Response size changed (38511 vs 38538)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%2f..%5c%2e%2e%2f",
+      "description": "Advanced path traversal: appended '%2e%2e%2f..%5c%2e%2e%2f' to 'register' - Response size changed (38553 vs 38568)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Potential IDOR (length diff)",
+      "url": "https://looksmax.org/login/register%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+      "description": "Advanced path traversal: appended '%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c' to 'register' - Response size changed (38518 vs 38994)",
+      "status": 200,
+      "response_sample": "<!DOCTYPE html>\n<html id=\"XF\" lang=\"en-US\" dir=\"LTR\"\n\tdata-app=\"public\"\n\tdata-template=\"register_form\"\n\tdata-container-key=\"\"\n\tdata-content-key=\"\"\n\tdata-logged-in=\"false\"\n\tdata-cookie-prefix=\"xf_\"\n\tda...",
+      "severity": "HIGH"
+    }
+  ]
+}

