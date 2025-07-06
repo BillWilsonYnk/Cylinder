@@ -155,6 +155,24 @@ A comprehensive IDOR (Insecure Direct Object Reference) vulnerability testing sc
 - **Header Manipulation**: Tests for IDOR via custom HTTP headers
 - **JSON Path Traversal**: Tests nested JSON structures for IDOR
 - **Advanced Parameter Techniques**: URL encoding, case manipulation, and more
+- **Advanced Path Traversal**: Double encoding, mixed slashes, dotless traversal techniques
+
+### Ultra-Sophisticated Combined Attack Vectors
+- **GraphQL Introspection**: Tests for exposed GraphQL schemas and introspection vulnerabilities
+- **Advanced JWT Manipulation**: Algorithm confusion, key injection, header manipulation
+- **Prototype Pollution**: Tests for JavaScript prototype pollution vulnerabilities
+- **HTTP Request Smuggling**: Tests for HTTP request smuggling vulnerabilities
+- **SSRF Techniques**: Tests for Server-Side Request Forgery vulnerabilities
+- **Cache Poisoning**: Tests for cache poisoning via header manipulation
+- **Deserialization Attacks**: Tests for insecure deserialization vulnerabilities
+- **Template Injection**: Tests for server-side template injection vulnerabilities
+- **NoSQL Injection**: Tests for NoSQL injection vulnerabilities
+- **LDAP Injection**: Tests for LDAP injection vulnerabilities
+- **XML External Entity (XXE)**: Tests for XXE vulnerabilities
+- **Server-Side Includes (SSI)**: Tests for SSI vulnerabilities
+- **Command Injection**: Tests for command injection vulnerabilities
+- **Advanced Encoding Bypass**: Tests for encoding bypass techniques
+- **Combined Attack Vectors**: Tests for multi-vector attack combinations
 
 ## Installation
 
@@ -212,6 +230,30 @@ python cylinder.py -u https://target.com --proxy "http://127.0.0.1:8080"
 
 # Save results to file
 python cylinder.py -u https://target.com --output results.json
+
+# Test with advanced path traversal
+python cylinder.py -u https://target.com --advanced-traversal
+
+### Ultra-Sophisticated Testing
+
+```bash
+# Enable all ultra-sophisticated attack vectors (maximum coverage)
+python cylinder.py -u https://target.com --all-ultra-sophisticated
+
+# Test specific ultra-sophisticated techniques
+python cylinder.py -u https://target.com --graphql-introspection --jwt-advanced --prototype-pollution
+
+# Test for SSRF and cache poisoning
+python cylinder.py -u https://target.com --ssrf --cache-poisoning
+
+# Test for injection vulnerabilities
+python cylinder.py -u https://target.com --nosql-injection --ldap-injection --xxe
+
+# Test for template and command injection
+python cylinder.py -u https://target.com --template-injection --command-injection
+
+# Test combined attack vectors
+python cylinder.py -u https://target.com --combined-attacks --advanced-encoding
 ```
 
 ### Verbose Output
@@ -251,6 +293,25 @@ python cylinder.py -u https://target.com --verbose --all-high-value
 - `--payment`: Test payment endpoints for IDOR
 - `--api-keys`: Test API key endpoints for IDOR
 - `--oauth`: Test OAuth endpoints for IDOR
+- `--advanced-traversal`: Enable advanced path traversal testing
+
+### Ultra-Sophisticated Attack Vector Options
+- `--all-ultra-sophisticated`: Enable all ultra-sophisticated attack vectors
+- `--graphql-introspection`: Enable GraphQL introspection testing
+- `--jwt-advanced`: Enable advanced JWT manipulation testing
+- `--prototype-pollution`: Enable prototype pollution testing
+- `--http-smuggling`: Enable HTTP request smuggling testing
+- `--ssrf`: Enable SSRF testing
+- `--cache-poisoning`: Enable cache poisoning testing
+- `--deserialization`: Enable deserialization testing
+- `--template-injection`: Enable template injection testing
+- `--nosql-injection`: Enable NoSQL injection testing
+- `--ldap-injection`: Enable LDAP injection testing
+- `--xxe`: Enable XML External Entity testing
+- `--ssi`: Enable Server-Side Includes testing
+- `--command-injection`: Enable command injection testing
+- `--advanced-encoding`: Enable advanced encoding bypass testing
+- `--combined-attacks`: Enable combined attack vector testing
 
 ## Output
 
@@ -297,6 +358,12 @@ When using `--output`, results are saved in JSON format:
 6. **Test File Operations**: Document access can lead to significant bounties
 7. **Use Verbose Mode**: Detailed output helps understand the testing process
 8. **Save Results**: Always save results for later analysis and reporting
+9. **Use Ultra-Sophisticated Techniques**: For advanced targets, use `--all-ultra-sophisticated`
+10. **Test GraphQL Endpoints**: GraphQL introspection can reveal sensitive schema information
+11. **Check for Prototype Pollution**: JavaScript applications may be vulnerable to prototype pollution
+12. **Test SSRF Vulnerabilities**: Internal service access can lead to high-value findings
+13. **Look for Injection Vulnerabilities**: NoSQL, LDAP, and template injection can bypass authentication
+14. **Test Combined Attack Vectors**: Multi-vector attacks can bypass multiple security controls
 
 ## Legal and Ethical Use
 
